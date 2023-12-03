@@ -10,7 +10,7 @@ import pandas as pd
 This file contains a function for training consensus AC agents in gym environments. It is designed for batch updates.
 '''
 
-def train_RPBCAC(env,agents,args):
+def train_RPBCAC(env,agents,args,run):
     '''
     FUNCTION train_RBPCAC() - training a mixed cooperative and adversarial network of consensus AC agents including RPBCAC agents
     The agents apply actions sampled from the actor network and estimate online the team-average errors for the critic and team-average reward updates.
@@ -166,12 +166,20 @@ def train_RPBCAC(env,agents,args):
                }
         paths.append(path)
 
+        try:
+            run["train/True_team_returns"].append(mean_true_returns)
+            run["train/Estimated_team_returns"].append(mean_est_returns)
+            run["train/True_adv_returns"].append(mean_true_returns_adv)
+        except Exception as e:
+            print(e)
+            pass
+
     sim_data = pd.DataFrame.from_dict(paths)
     return agents,sim_data
 
 #----------------------------------------
 
-def train_RTMCAC(env,agents,args):
+def train_RTMCAC(env,agents,args,run):
     '''
     FUNCTION train_RBPCAC() - training a mixed cooperative and adversarial network of consensus AC agents including RCAC agents
     The agents apply actions sampled from the actor network and estimate online the team-average errors for the critic and team-average reward updates.
@@ -319,6 +327,14 @@ def train_RTMCAC(env,agents,args):
                 "Estimated_team_returns":mean_est_returns
                }
         paths.append(path)
+
+        try:
+            run["train/True_team_returns"].append(mean_true_returns)
+            run["train/Estimated_team_returns"].append(mean_est_returns)
+            run["train/True_adv_returns"].append(mean_true_returns_adv)
+        except Exception as e:
+            print(e)
+            pass
 
     sim_data = pd.DataFrame.from_dict(paths)
     return agents,sim_data

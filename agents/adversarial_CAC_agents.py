@@ -2,6 +2,15 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
+import gc
+from tensorflow.keras import backend as k
+from tensorflow.keras.callbacks import Callback
+
+class ClearMemory(Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        gc.collect()
+        k.clear_session()
+
 class Faulty_CAC_agent():
     '''
     FAULTY CONSENSUS ACTOR-CRITIC AGENT
@@ -23,7 +32,7 @@ class Faulty_CAC_agent():
         self.gamma = gamma
         self.n_actions=self.actor.output_shape[1]
 
-        self.actor.compile(optimizer=keras.optimizers.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy())
+        self.actor.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy(),run_eagerly=True)
 
     def actor_update(self,states,new_states,local_rewards,local_actions):
         '''
@@ -95,9 +104,9 @@ class Malicious_CAC_agent():
         self.n_actions=self.actor.output_shape[1]
 
         self.fast_lr = fast_lr
-        self.optimizer_fast=keras.optimizers.SGD(learning_rate=fast_lr)
+        self.optimizer_fast=keras.optimizers.legacy.SGD(learning_rate=fast_lr)
         self.mse = keras.losses.MeanSquaredError()
-        self.actor.compile(optimizer=keras.optimizers.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy())
+        self.actor.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy(),run_eagerly=True)
 
     def actor_update(self,states,new_states,local_rewards,local_actions):
         '''
@@ -211,9 +220,9 @@ class Greedy_CAC_agent():
         self.n_actions=self.actor.output_shape[1]
 
         self.fast_lr = fast_lr
-        self.optimizer_fast=keras.optimizers.SGD(learning_rate=fast_lr)
+        self.optimizer_fast=keras.optimizers.legacy.SGD(learning_rate=fast_lr)
         self.mse = keras.losses.MeanSquaredError()
-        self.actor.compile(optimizer=keras.optimizers.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy())
+        self.actor.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy(),run_eagerly=True)
 
     def actor_update(self,states,new_states,local_rewards,local_actions):
         '''
@@ -323,9 +332,9 @@ class Byzantine_CAC_agent():
         self.n_actions=self.actor.output_shape[1]
 
         self.fast_lr = fast_lr
-        self.optimizer_fast=keras.optimizers.SGD(learning_rate=fast_lr)
+        self.optimizer_fast=keras.optimizers.legacy.SGD(learning_rate=fast_lr)
         self.mse = keras.losses.MeanSquaredError()
-        self.actor.compile(optimizer=keras.optimizers.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy())
+        self.actor.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy(),run_eagerly=True)
         self.critic_feature_extractor = keras.Model(inputs=self.critic.inputs,outputs=self.critic.layers[-1].output)
         self.TR_feature_extractor = keras.Model(inputs=self.TR.inputs,outputs=self.TR.layers[-1].output)
 

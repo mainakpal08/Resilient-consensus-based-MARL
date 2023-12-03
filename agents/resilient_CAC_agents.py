@@ -2,6 +2,15 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
+import gc
+from tensorflow.keras import backend as k
+from tensorflow.keras.callbacks import Callback
+
+class ClearMemory(Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        gc.collect()
+        k.clear_session()
+
 class RPBCAC_agent():
     '''
     RESILIENT PROJECTION-BASED CONSENSUS ACTOR-CRITIC AGENT
@@ -40,9 +49,9 @@ class RPBCAC_agent():
         self.n_actions=self.actor.output_shape[1]
 
         self.fast_lr = fast_lr
-        self.optimizer_fast=keras.optimizers.SGD(learning_rate=fast_lr)
+        self.optimizer_fast=keras.optimizers.legacy.SGD(learning_rate=fast_lr)
         self.mse = keras.losses.MeanSquaredError()
-        self.actor.compile(optimizer=keras.optimizers.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy())
+        self.actor.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy(),run_eagerly=True)
         self.critic_feature_extractor = keras.Model(inputs=self.critic.inputs,outputs=self.critic.layers[-2].output)
         self.TR_feature_extractor = keras.Model(inputs=self.TR.inputs,outputs=self.TR.layers[-2].output)
 
@@ -324,9 +333,9 @@ class RTMCAC_agent():
         self.n_actions=self.actor.output_shape[1]
 
         self.fast_lr = fast_lr
-        self.optimizer_fast=keras.optimizers.SGD(learning_rate=fast_lr)
+        self.optimizer_fast=keras.optimizers.legacy.SGD(learning_rate=fast_lr)
         self.mse = keras.losses.MeanSquaredError()
-        self.actor.compile(optimizer=keras.optimizers.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy())
+        self.actor.compile(optimizer=keras.optimizers.legacy.Adam(learning_rate=slow_lr),loss=keras.losses.SparseCategoricalCrossentropy(),run_eagerly=True)
 
     def _transpose_list(self,weights):
         '''Transpose list and stack agents weights'''

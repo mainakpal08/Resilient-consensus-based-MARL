@@ -13,6 +13,8 @@ from agents.resilient_CAC_agents import RPBCAC_agent, RTMCAC_agent
 from agents.adversarial_CAC_agents import Faulty_CAC_agent, Greedy_CAC_agent, Malicious_CAC_agent, Byzantine_CAC_agent
 import training.train_agents as training
 
+import neptune
+
 '''
 Cooperative navigation problem with resilient consensus and adversarial actor-critic agents
 - This is a main file, where the user selects learning hyperparameters, environment parameters,
@@ -24,8 +26,12 @@ if __name__ == '__main__':
 
     '''USER-DEFINED PARAMETERS'''
     parser = argparse.ArgumentParser(description='Provide parameters for training consensus AC agents')
+    parser.add_argument('--exp_name', type=str, default='')
+    parser.add_argument('--grid_size', type=int, default=10)
+    parser.add_argument('--scn', type=str, default='coop')
     parser.add_argument('--n_agents',help='total number of agents',type=int,default=5)
-    parser.add_argument('--agent_label', help='classification of each agent (Cooperative,Malicious,Faulty,Greedy)',type=str, default=['Cooperative','Cooperative','Cooperative','Cooperative','Malicious'])
+    #parser.add_argument('--agent_label', help='classification of each agent (Cooperative,Malicious,Faulty,Greedy)',type=str, default=['Cooperative','Cooperative','Cooperative','Cooperative','Malicious'])
+    parser.add_argument('--agent_label', nargs='+',help='classification of each agent (Cooperative,Malicious,Faulty,Greedy)', required=True)
     parser.add_argument('--n_actions',help='size of action space of each agent',type=int,default=5)
     parser.add_argument('--n_states',help='state dimension of each agent',type=int,default=2)
     parser.add_argument('--n_episodes', help='number of episodes', type=int, default=10000)
@@ -41,18 +47,55 @@ if __name__ == '__main__':
     parser.add_argument('--randomize_state',help='Set to True if the agents start at random initial state in every episode',type=bool,default=True)
     parser.add_argument('--scaling', help='Normalize states for training?', type = bool, default=True)
     parser.add_argument('--resilient_method', help='Choose between trimmed mean and projection-based consensus', default='projection-based')
-    parser.add_argument('--summary_dir',help='Create a directory to save simulation results', default='./simulation_results/')
+    parser.add_argument('--summary_dir',help='Create a directory to save simulation results', default='./new_results/raw_data/')
     parser.add_argument('--random_seed',help='Set random seed for the random number generator',type=int,default=20)
-    parser.add_argument('--desired_state',help='desired state of the agents',type=int,default=np.random.randint(0,6,size=(4,2)))
-    parser.add_argument('--initial_state',help='initial state of the agents',type=int,default=np.random.randint(0,6,size=(4,2)))
+    parser.add_argument('--save_every', type=int, default=100)
+    #parser.add_argument('--desired_state',help='desired state of the agents',type=int,default=np.random.randint(0,6,size=(4,2)))
+    #parser.add_argument('--initial_state',help='initial state of the agents',type=int,default=np.random.randint(0,6,size=(4,2)))
     args = vars(parser.parse_args())
     np.random.seed(args['random_seed'])
     tf.random.set_seed(args['random_seed'])
-    args['desired_state'] = np.random.randint(0,6,size=(args['n_agents'],args['n_states']))
-    args['initial_state'] = np.random.randint(0,6,size=(args['n_agents'],args['n_states']))
+    args['desired_state'] = np.random.randint(0,args['grid_size'],size=(args['n_agents'],args['n_states']))
+    args['initial_state'] = np.random.randint(0,args['grid_size'],size=(args['n_agents'],args['n_states']))
     #folder_path = os.path.join(os.getcwd(),'simulation_results/scenarios/' + args['resilient_method'] + '/' + args['agent_label'][-1] + '_h' + str(args['H']) + '/seed=' + str(args['random_seed']) + '/')
     #if not os.path.isdir(folder_path):
     #    os.makedirs(folder_path)
+
+
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
+        try:
+            tf.config.set_logical_device_configuration(
+                gpus[0],
+                [tf.config.LogicalDeviceConfiguration(memory_limit=2048)])
+            logical_gpus = tf.config.list_logical_devices('GPU')
+            print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Virtual devices must be set before GPUs have been initialized
+            print(e)
+
+    run = None
+    # Neptune client
+    try:
+        import neptune    
+        run = neptune.init_run(
+            name=args["exp_name"],
+            project="mpal/RPBCAC",
+            api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI5YmJkOTI0Zi1mYTI1LTQ1MWEtYTg5Ni00ZDU4ZmYwNWVkNjgifQ==",
+        )
+    except Exception as e:
+        print(e)
+        pass
+
+    else:
+        # Neptune Param log
+        run["parameters"] = args
+
+    path2save = args['summary_dir'] + args['resilient_method'] + '/' + args['scn'] + '/' + 'H={}'.format(args['H']) + '/' + 'seed={}'.format(args['random_seed']) + '/'
+    args['path2save'] = path2save
+    os.makedirs(path2save, exist_ok=True)
+
 
     #----------------------------------------------------------------------------------------------------------------------------------------
     '''NEURAL NETWORK ARCHITECTURE'''
@@ -131,8 +174,8 @@ if __name__ == '__main__':
     print(args)
     #---------------------------------------------------------------------------------------------------------------------------------------------
     '''TRAIN AGENTS'''
-    env = Grid_World(nrow=6,
-                     ncol=6,
+    env = Grid_World(nrow=args['grid_size'],
+                     ncol=args['grid_size'],
                      n_agents=args['n_agents'],
                      desired_state=args['desired_state'],
                      initial_state=args['initial_state'],
@@ -140,8 +183,8 @@ if __name__ == '__main__':
                      scaling=args['scaling']
                      )
     if args['resilient_method'] == 'projection-based':
-        trained_agents,sim_data = training.train_RPBCAC(env,agents,args)
+        trained_agents,sim_data = training.train_RPBCAC(env,agents,args,run)
     else:
-        trained_agents,sim_data = training.train_RTMCAC(env,agents,args)
+        trained_agents,sim_data = training.train_RTMCAC(env,agents,args,run)
     #----------------------------------------------------------------------------------------------------
     sim_data.to_pickle("sim_data.pkl")
