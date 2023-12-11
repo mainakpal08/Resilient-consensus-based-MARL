@@ -115,6 +115,10 @@ class RPBCAC_agent():
         self.optimizer_fast.apply_gradients(zip(critic_grad, self.critic.trainable_weights[-2:]))
         critic_weights = self.critic.get_weights()
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return critic_weights,critic_loss
 
     def TR_update_team(self,states,team_actions,team_errors):
@@ -132,6 +136,10 @@ class RPBCAC_agent():
 
         self.optimizer_fast.apply_gradients(zip(TR_grad, self.TR.trainable_weights[-2:]))
         TR_weights = self.TR.get_weights()
+
+        del tape
+        gc.collect()
+        k.clear_session()
 
         return TR_weights,TR_loss
 
@@ -181,6 +189,10 @@ class RPBCAC_agent():
         critic_weights = self.critic.get_weights()
         self.critic.set_weights(critic_weights_temp)
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return critic_weights, critic_loss
 
     def TR_update_local(self,state,team_action,local_reward):
@@ -205,6 +217,10 @@ class RPBCAC_agent():
         self.optimizer_fast.apply_gradients(zip(TR_grad, self.TR.trainable_weights))
         TR_weights = self.TR.get_weights()
         self.TR.set_weights(TR_weights_temp)
+
+        del tape
+        gc.collect()
+        k.clear_session()
 
         return TR_weights, TR_loss
 
@@ -288,7 +304,7 @@ class RPBCAC_agent():
         random_action = np.random.choice(self.n_actions)
         if from_policy==True:
             state = np.array(state).reshape(1,-1)
-            action_prob = self.actor.predict(state)
+            action_prob = self.actor.predict(state, verbose=0)
             action_from_policy = np.random.choice(self.n_actions, p = action_prob[0])
             self.action = np.random.choice([action_from_policy,random_action], p = [1-mu,mu])
         else:
@@ -402,6 +418,10 @@ class RTMCAC_agent():
         critic_vars = self.critic.get_weights()
         self.critic.set_weights(critic_weights_temp)
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return critic_vars, critic_loss
 
     def TR_update_local(self,state,team_action,local_reward):
@@ -424,6 +444,10 @@ class RTMCAC_agent():
         self.optimizer_fast.apply_gradients(zip(TR_grad, self.TR.trainable_weights))
         TR_vars = self.TR.get_weights()
         self.TR.set_weights(TR_weights_temp)
+
+        del tape
+        gc.collect()
+        k.clear_session()
 
         return TR_vars, TR_loss
 
@@ -452,7 +476,7 @@ class RTMCAC_agent():
         random_action = np.random.choice(self.n_actions)
         if from_policy==True:
             state = np.array(state).reshape(1,-1)
-            action_prob = self.actor.predict(state)
+            action_prob = self.actor.predict(state, verbose=0)
             action_from_policy = np.random.choice(self.n_actions, p = action_prob[0])
             self.action = np.random.choice([action_from_policy,random_action], p = [1-mu,mu])
         else:

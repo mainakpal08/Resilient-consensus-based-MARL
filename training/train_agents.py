@@ -80,6 +80,11 @@ def train_RPBCAC(env,agents,args,run):
                 critic_err = critic_errors_team.reshape(n_ep_fixed*max_ep_len,n_agents,1)
                 TR_err = TR_errors_team.reshape(n_ep_fixed*max_ep_len,n_agents,1)
 
+                r_coop = np.zeros([local_r.shape[0],local_r.shape[2]])
+                for node in (x for x in range(n_agents) if args['agent_label'][x] == 'Cooperative'):
+                    r_coop += local_r[:,node] / n_coop
+
+
                 n = 0
                 while n < n_epochs:
 
@@ -89,17 +94,18 @@ def train_RPBCAC(env,agents,args,run):
                     'BATCH LOCAL CRITIC AND TEAM-AVERAGE REWARD UPDATES'
                     #---------------------------------------------------
                     for node in range(n_agents):
+                        r_applied = r_coop if args['common_reward'] else local_r[:,node]
                         if args['agent_label'][node] == 'Cooperative':
-                            x, TR_loss[node] = agents[node].TR_update_local(s,team_a,local_r[:,node])
-                            y, critic_loss[node] = agents[node].critic_update_local(s,ns,local_r[:,node])
+                            x, TR_loss[node] = agents[node].TR_update_local(s,team_a,r_applied)
+                            y, critic_loss[node] = agents[node].critic_update_local(s,ns,r_applied)
                         elif args['agent_label'][node] == 'Greedy':
                             x = agents[node].TR_update_local(s,team_a,local_r[:,node])
                             y = agents[node].critic_update_local(s,ns,local_r[:,node])
                         elif args['agent_label'][node] == 'Malicious':
                             agents[node].critic_update_local(s,ns,local_r[:,node])
-                            mean_coop_r = np.mean(np.delete(local_r,node,axis=1),axis=1)
-                            x = agents[node].TR_update_compromised(s,team_a,-mean_coop_r)
-                            y = agents[node].critic_update_compromised(s,ns,-mean_coop_r)
+                            #mean_coop_r = np.mean(np.delete(local_r,node,axis=1),axis=1)
+                            x = agents[node].TR_update_compromised(s,team_a,-r_coop)#mean_coop_r)
+                            y = agents[node].critic_update_compromised(s,ns,-r_coop)#mean_coop_r)
                         elif args['agent_label'][node] == 'Faulty':
                             x = agents[node].get_TR_weights()
                             y = agents[node].get_critic_weights()
@@ -250,6 +256,11 @@ def train_RTMCAC(env,agents,args,run):
                 critic_err = critic_errors_team.reshape(n_ep_fixed*max_ep_len,n_agents,1)
                 TR_err = TR_errors_team.reshape(n_ep_fixed*max_ep_len,n_agents,1)
 
+                r_coop = np.zeros([local_r.shape[0],local_r.shape[2]])
+                for node in (x for x in range(n_agents) if args['agent_label'][x] == 'Cooperative'):
+                    r_coop += local_r[:,node] / n_coop
+
+
                 n = 0
                 while n < n_epochs:
 
@@ -258,18 +269,23 @@ def train_RTMCAC(env,agents,args,run):
                     #---------------------------------------------------
                     'BATCH LOCAL CRITIC AND TEAM-AVERAGE REWARD UPDATES'
                     #---------------------------------------------------
+
+                    #mean_coop_r = np.mean(np.delete(local_r,node,axis=1),axis=1)
                     for node in range(n_agents):
+                        
+                        r_applied = r_coop if args['common_reward'] else local_r[:,node]
+
                         if args['agent_label'][node] == 'Cooperative':
-                            x, TR_loss[node] = agents[node].TR_update_local(s,team_a,local_r[:,node])
-                            y, critic_loss[node] = agents[node].critic_update_local(s,ns,local_r[:,node])
+                            x, TR_loss[node] = agents[node].TR_update_local(s,team_a,r_applied)
+                            y, critic_loss[node] = agents[node].critic_update_local(s,ns,r_applied)
                         elif args['agent_label'][node] == 'Greedy':
                             x = agents[node].TR_update_local(s,team_a,local_r[:,node])
                             y = agents[node].critic_update_local(s,ns,local_r[:,node])
                         elif args['agent_label'][node] == 'Malicious':
                             agents[node].critic_update_local(s,ns,local_r[:,node])
-                            mean_coop_r = np.mean(np.delete(local_r,node,axis=1),axis=1)
-                            x = agents[node].TR_update_compromised(s,team_a,-mean_coop_r)
-                            y = agents[node].critic_update_compromised(s,ns,-mean_coop_r)
+                            #mean_coop_r = np.mean(np.delete(local_r,node,axis=1),axis=1)
+                            x = agents[node].TR_update_compromised(s,team_a,-r_coop)#-mean_coop_r)
+                            y = agents[node].critic_update_compromised(s,ns,-r_coop)#-mean_coop_r)
                         elif args['agent_label'][node] == 'Faulty':
                             x = agents[node].get_TR_weights()
                             y = agents[node].get_critic_weights()

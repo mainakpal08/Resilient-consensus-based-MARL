@@ -50,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument('--summary_dir',help='Create a directory to save simulation results', default='./new_results/raw_data/')
     parser.add_argument('--random_seed',help='Set random seed for the random number generator',type=int,default=20)
     parser.add_argument('--save_every', type=int, default=100)
+    parser.add_argument('--common_reward',help='Set to True if the agents receive the team-average reward',default=False)
     #parser.add_argument('--desired_state',help='desired state of the agents',type=int,default=np.random.randint(0,6,size=(4,2)))
     #parser.add_argument('--initial_state',help='initial state of the agents',type=int,default=np.random.randint(0,6,size=(4,2)))
     args = vars(parser.parse_args())
@@ -78,11 +79,11 @@ if __name__ == '__main__':
     run = None
     # Neptune client
     try:
-        import neptune    
+        #import neptune    
         run = neptune.init_run(
             name=args["exp_name"],
             project="mpal/RPBCAC",
-            api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI5YmJkOTI0Zi1mYTI1LTQ1MWEtYTg5Ni00ZDU4ZmYwNWVkNjgifQ==",
+            api_token="ENTER YOUR API TOKEN HERE",
         )
     except Exception as e:
         print(e)
@@ -187,4 +188,4 @@ if __name__ == '__main__':
     else:
         trained_agents,sim_data = training.train_RTMCAC(env,agents,args,run)
     #----------------------------------------------------------------------------------------------------
-    sim_data.to_pickle("sim_data.pkl")
+    sim_data.to_pickle(args['path2save'] + "/" + "sim_data.pkl")

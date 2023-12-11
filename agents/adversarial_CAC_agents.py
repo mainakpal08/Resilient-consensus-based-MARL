@@ -71,7 +71,7 @@ class Faulty_CAC_agent():
         random_action = np.random.choice(self.n_actions)
         if from_policy==True:
             state = np.array(state).reshape(1,-1)
-            action_prob = self.actor.predict(state)
+            action_prob = self.actor.predict(state, verbose=0)
             action_from_policy = np.random.choice(self.n_actions, p = action_prob[0])
             self.action = np.random.choice([action_from_policy,random_action], p = [1-mu,mu])
         else:
@@ -142,6 +142,11 @@ class Malicious_CAC_agent():
         critic_grad = tape.gradient(critic_loss_team,self.critic.trainable_weights)
         self.optimizer_fast.apply_gradients(zip(critic_grad, self.critic.trainable_weights))
 
+
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return self.critic.get_weights()
 
     def critic_update_local(self,states,new_states,local_rewards):
@@ -160,6 +165,10 @@ class Malicious_CAC_agent():
         critic_grad_local = tape.gradient(critic_loss_local,self.critic_local.trainable_weights)
         self.optimizer_fast.apply_gradients(zip(critic_grad_local, self.critic_local.trainable_weights))
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
     def TR_update_compromised(self,states,team_actions,compromised_rewards):
         '''
         Stochastic update of the team reward network
@@ -177,6 +186,10 @@ class Malicious_CAC_agent():
         TR_grad = tape.gradient(TR_loss,self.TR.trainable_weights)
         self.optimizer_fast.apply_gradients(zip(TR_grad, self.TR.trainable_weights))
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return self.TR.get_weights()
 
     def get_action(self,state,from_policy=False,mu=0.1):
@@ -188,7 +201,7 @@ class Malicious_CAC_agent():
         random_action = np.random.choice(self.n_actions)
         if from_policy==True:
             state = np.array(state).reshape(1,-1)
-            action_prob = self.actor.predict(state)
+            action_prob = self.actor.predict(state, verbose=0)
             action_from_policy = np.random.choice(self.n_actions, p = action_prob[0])
             self.action = np.random.choice([action_from_policy,random_action], p = [1-mu,mu])
         else:
@@ -264,6 +277,10 @@ class Greedy_CAC_agent():
 
         self.optimizer_fast.apply_gradients(zip(critic_mse_grad, self.critic.trainable_weights))
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return self.critic.get_weights()
 
     def TR_update_local(self,state,team_action,local_reward,reset=False):
@@ -288,6 +305,10 @@ class Greedy_CAC_agent():
 
         self.optimizer_fast.apply_gradients(zip(TR_mse_grad, self.TR.trainable_weights))
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
         return self.TR.get_weights()
 
     def get_action(self,state,from_policy=False,mu=0.1):
@@ -299,7 +320,7 @@ class Greedy_CAC_agent():
         random_action = np.random.choice(self.n_actions)
         if from_policy==True:
             state = np.array(state).reshape(1,-1)
-            action_prob = self.actor.predict(state)
+            action_prob = self.actor.predict(state, verbose=0)
             action_from_policy = np.random.choice(self.n_actions, p = action_prob[0])
             self.action = np.random.choice([action_from_policy,random_action], p = [1-mu,mu])
         else:
@@ -426,6 +447,10 @@ class Byzantine_CAC_agent():
         critic_grad_local = tape.gradient(critic_loss_local,self.critic_local.trainable_weights)
         self.optimizer_fast.apply_gradients(zip(critic_grad_local, self.critic_local.trainable_weights))
 
+        del tape
+        gc.collect()
+        k.clear_session()
+
     def get_action(self,state,from_policy=False,mu=0.1):
         '''Choose an action at the current state
             - set from_policy to True to sample from the actor
@@ -435,7 +460,7 @@ class Byzantine_CAC_agent():
         random_action = np.random.choice(self.n_actions)
         if from_policy==True:
             state = np.array(state).reshape(1,-1)
-            action_prob = self.actor.predict(state)
+            action_prob = self.actor.predict(state, verbose=0)
             action_from_policy = np.random.choice(self.n_actions, p = action_prob[0])
             self.action = np.random.choice([action_from_policy,random_action], p = [1-mu,mu])
         else:
