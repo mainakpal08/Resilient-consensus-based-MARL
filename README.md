@@ -46,6 +46,9 @@ The simulation results below demonstrate very good performance of the RPBCAC wit
 
 The folder with resilient agents contains the RPBCAC agent as well as an agent that applies the method of trimmed means in the consensus updates (RTMCAC).
 
+# Comparison
+TODO
+
 ## References
 
 <a id="1">[1]</a>
